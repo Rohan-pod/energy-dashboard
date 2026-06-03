@@ -12,6 +12,13 @@ const supabase = createClient(
     process.env.SUPABASE_ANON_KEY
 );
 
+// Admin client required for looking up users by username
+const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY 
+    ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false }
+      })
+    : null;
+
 // --- Middleware ---
 app.use(express.json());
 app.use(cors({
@@ -45,18 +52,15 @@ async function verifyAuth(req, res, next) {
 app.post('/api/auth/signup', async (req, res) => {
     const { username, email, password } = req.body;
 
-    if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password are required' });
+    if (!username || !email || !password) {
+        return res.status(400).json({ error: 'Username, email, and password are required' });
     }
 
-    // Map username to a proxy email to allow username logins in Supabase
-    const finalEmail = email ? email : `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@energydashboard.local`;
-
     const { data, error } = await supabase.auth.signUp({
-        email: finalEmail,
+        email: email,
         password,
         options: {
-            data: { username: username, provided_email: email || '' }
+            data: { username: username }
         }
     });
 
@@ -75,10 +79,29 @@ app.post('/api/auth/login', async (req, res) => {
         return res.status(400).json({ error: 'Email/Username and password are required' });
     }
 
-    // If identifier is not an email, assume it's a username and use the proxy email format
     let emailToUse = identifier;
+
+    // If identifier is a username (no @), look up their email using the Admin API
     if (!identifier.includes('@')) {
-        emailToUse = `${identifier.toLowerCase().replace(/[^a-z0-9]/g, '')}@energydashboard.local`;
+        if (!supabaseAdmin) {
+            return res.status(500).json({ error: 'Username login is not fully configured (missing service role key)' });
+        }
+        
+        try {
+            // In a real production app with many users, you should use a public profiles table.
+            // For this project, we iterate over users via the admin API.
+            const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+            if (listError) throw listError;
+
+            const foundUser = users.find(u => u.user_metadata && u.user_metadata.username === identifier);
+            if (!foundUser) {
+                return res.status(401).json({ error: 'Invalid login credentials' });
+            }
+            emailToUse = foundUser.email;
+        } catch (err) {
+            console.error('Admin user lookup failed:', err);
+            return res.status(500).json({ error: 'Failed to look up username' });
+        }
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
