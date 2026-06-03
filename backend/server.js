@@ -43,17 +43,20 @@ async function verifyAuth(req, res, next) {
 
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
-    const { email, password, fullName } = req.body;
+    const { username, email, password } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required' });
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
     }
 
+    // Map username to a proxy email to allow username logins in Supabase
+    const finalEmail = email ? email : `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@energydashboard.local`;
+
     const { data, error } = await supabase.auth.signUp({
-        email,
+        email: finalEmail,
         password,
         options: {
-            data: { full_name: fullName || '' }
+            data: { username: username, provided_email: email || '' }
         }
     });
 
@@ -66,14 +69,20 @@ app.post('/api/auth/signup', async (req, res) => {
 
 // POST /api/auth/login
 app.post('/api/auth/login', async (req, res) => {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required' });
+    if (!identifier || !password) {
+        return res.status(400).json({ error: 'Email/Username and password are required' });
+    }
+
+    // If identifier is not an email, assume it's a username and use the proxy email format
+    let emailToUse = identifier;
+    if (!identifier.includes('@')) {
+        emailToUse = `${identifier.toLowerCase().replace(/[^a-z0-9]/g, '')}@energydashboard.local`;
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: emailToUse,
         password
     });
 

@@ -76,14 +76,14 @@ async function handleLogin(event) {
     event.preventDefault();
     setLoading('login-btn', true);
 
-    const email = document.getElementById('login-email').value.trim();
+    const identifier = document.getElementById('login-identifier').value.trim();
     const password = document.getElementById('login-password').value;
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ identifier, password })
         });
 
         const result = await response.json();
@@ -114,7 +114,7 @@ async function handleSignup(event) {
     event.preventDefault();
     setLoading('signup-btn', true);
 
-    const fullName = document.getElementById('signup-name').value.trim();
+    const username = document.getElementById('signup-username').value.trim();
     const email = document.getElementById('signup-email').value.trim();
     const password = document.getElementById('signup-password').value;
 
@@ -122,7 +122,7 @@ async function handleSignup(event) {
         const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, fullName })
+            body: JSON.stringify({ username, email, password })
         });
 
         const result = await response.json();
