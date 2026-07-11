@@ -4,9 +4,63 @@
 document.addEventListener('DOMContentLoaded', () => {
     const session = localStorage.getItem('session');
     if (session) {
-        window.location.href = 'dashboard.html';
+        try {
+            const parsed = JSON.parse(session);
+            // Check if the access token has expired
+            if (parsed.expires_at) {
+                const expiresAt = parsed.expires_at * 1000; // Supabase returns seconds
+                const now = Date.now();
+                const bufferMs = 60 * 1000; // 1 minute buffer
+
+                if (now < expiresAt - bufferMs) {
+                    // Token is still valid — go to dashboard
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+
+                // Token expired or about to expire — try refresh
+                if (parsed.refresh_token) {
+                    refreshAndRedirect(parsed.refresh_token);
+                    return;
+                }
+            } else {
+                // No expires_at — legacy session, just redirect
+                window.location.href = 'dashboard.html';
+                return;
+            }
+        } catch (e) {
+            // Invalid session JSON — clear and stay on login
+            localStorage.removeItem('session');
+            localStorage.removeItem('user');
+        }
     }
 });
+
+// Attempt to refresh the token and redirect to dashboard
+async function refreshAndRedirect(refreshToken) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken })
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            localStorage.setItem('session', JSON.stringify(result.session));
+            localStorage.setItem('user', JSON.stringify(result.user));
+            window.location.href = 'dashboard.html';
+        } else {
+            // Refresh failed — clear session and stay on login
+            localStorage.removeItem('session');
+            localStorage.removeItem('user');
+        }
+    } catch (error) {
+        // Network error — clear session
+        localStorage.removeItem('session');
+        localStorage.removeItem('user');
+    }
+}
 
 // --- Tab Switching ---
 function switchTab(tab) {
@@ -94,7 +148,7 @@ async function handleLogin(event) {
             return;
         }
 
-        // Store session
+        // Store full session (includes access_token, refresh_token, expires_at)
         localStorage.setItem('session', JSON.stringify(result.session));
         localStorage.setItem('user', JSON.stringify(result.user));
 
