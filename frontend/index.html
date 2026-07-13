@@ -72,6 +72,9 @@
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
+                        <div class="forgot-password-link">
+                            <a href="#" onclick="showForgotPassword(event)">Forgot Password?</a>
+                        </div>
                     </div>
                     <button type="submit" class="btn-submit" id="login-btn">
                         <span class="btn-text">Sign In</span>
@@ -100,6 +103,38 @@
                     </div>
                     <button type="submit" class="btn-submit" id="signup-btn">
                         <span class="btn-text">Create Account</span>
+                        <span class="btn-loader hidden"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                </form>
+
+                <!-- Forgot Password Form -->
+                <form id="forgot-form" class="auth-form hidden" onsubmit="handleForgotPassword(event)">
+                    <div class="form-group">
+                        <label for="forgot-email"><i class="fas fa-envelope"></i> Enter your email</label>
+                        <input type="email" id="forgot-email" placeholder="Email address" required>
+                    </div>
+                    <button type="submit" class="btn-submit" id="forgot-btn">
+                        <span class="btn-text">Send Reset Link</span>
+                        <span class="btn-loader hidden"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                    <div class="back-to-login">
+                        <a href="#" onclick="switchTab('login')"><i class="fas fa-arrow-left"></i> Back to Login</a>
+                    </div>
+                </form>
+
+                <!-- Update Password Form (Recovery) -->
+                <form id="update-password-form" class="auth-form hidden" onsubmit="handleUpdatePassword(event)">
+                    <div class="form-group">
+                        <label for="update-password"><i class="fas fa-lock"></i> New Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="update-password" placeholder="Enter new password" required minlength="6">
+                            <button type="button" class="toggle-password" onclick="togglePassword('update-password', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit" id="update-password-btn">
+                        <span class="btn-text">Update Password</span>
                         <span class="btn-loader hidden"><i class="fas fa-spinner fa-spin"></i></span>
                     </button>
                 </form>
