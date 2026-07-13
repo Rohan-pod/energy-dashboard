@@ -414,3 +414,22 @@ body {
         padding: 25px 20px;
     }
 }
+
+/* ===== Forgot Password Link ===== */
+.forgot-password-link {
+    text-align: right;
+    margin-top: 8px;
+}
+.forgot-password-link a, .back-to-login a {
+    font-size: 0.8rem;
+    color: #667eea;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+.forgot-password-link a:hover, .back-to-login a:hover {
+    color: #a8b8ff;
+}
+.back-to-login {
+    text-align: center;
+    margin-top: 15px;
+}

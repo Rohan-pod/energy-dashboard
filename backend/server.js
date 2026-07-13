@@ -180,6 +180,42 @@ app.post('/api/auth/refresh', async (req, res) => {
     });
 });
 
+// POST /api/auth/reset-password
+app.post('/api/auth/reset-password', async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${process.env.FRONTEND_URL}/index.html?type=recovery` // Where to send the user after clicking email link
+    });
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Password reset email sent' });
+});
+
+// POST /api/auth/update-password
+app.post('/api/auth/update-password', verifyAuth, async (req, res) => {
+    const { password } = req.body;
+
+    if (!password) {
+        return res.status(400).json({ error: 'New password is required' });
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: password });
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Password updated successfully' });
+});
+
 // POST /api/auth/logout
 app.post('/api/auth/logout', verifyAuth, async (req, res) => {
     const { error } = await supabase.auth.signOut();
