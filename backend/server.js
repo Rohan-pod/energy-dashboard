@@ -207,7 +207,12 @@ app.post('/api/auth/update-password', verifyAuth, async (req, res) => {
         return res.status(400).json({ error: 'New password is required' });
     }
 
-    const { error } = await supabase.auth.updateUser({ password: password });
+    if (!supabaseAdmin) {
+        return res.status(500).json({ error: 'Server misconfiguration: Service role key required for password update' });
+    }
+
+    // Use admin client to update the user since the global anon client has no session
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(req.user.id, { password: password });
 
     if (error) {
         return res.status(400).json({ error: error.message });
